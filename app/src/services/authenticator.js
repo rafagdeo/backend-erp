@@ -1,22 +1,26 @@
-const userModel = require("../models/user");
+const userModel = require("../models/users");
+const jwt = require("jsonwebtoken");
 
-async function login(email, password){
-  if(!email) {
-    throw new Error("email errado")
-  }
-  if(!password) {
-    throw new Error("password errado")
-  }
+async function login(email, password) {
+  if (!email) throw new Error("email errado");
+  if (!password) throw new Error("password errado");
 
-  const validateLogin = await userModel.getUserlogin(email, password)
-  return validateLogin
+  const user = await userModel.getUserlogin(email, password);
+
+  const token = jwt.sign(
+    { id: user.id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  return { ...user, token };
 }
 
 async function register(data) {
   if (
     !data.firstName ||
     !data.lastName ||
-    !data.age ||
+    !data.birthDate ||
     !data.email ||
     !data.phone ||
     !data.password
@@ -42,5 +46,4 @@ module.exports = {
   login,
   register,
   getUser
-  
 };
