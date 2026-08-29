@@ -1,4 +1,3 @@
-const db = require("../database/connection");
 const modelProject = require("../models/projects")
 
 async function createProject(data) {
