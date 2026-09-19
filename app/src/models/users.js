@@ -7,9 +7,9 @@ async function searchUserByEmail(email) {
 }
 
 async function createUser(data) {
-  const { firstName, lastName, birthDate, email, phone, password, confirmPassword } = data;
+  const { username, email, phone, password, confirmPassword } = data;
 
-  if (!firstName || !lastName || !birthDate || !email || !phone || !password || !confirmPassword) {
+  if (!username || !email || !phone || !password || !confirmPassword) {
     throw new Error("Todos os campos são obrigatórios");
   }
 
@@ -23,9 +23,9 @@ async function createUser(data) {
   const passwordHash = await bcrypt.hash(password, 10);
 
   const [result] = await db.execute(
-    `INSERT INTO users (first_name, last_name, birth_date, email, phone, password)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [firstName, lastName, birthDate, email, phone, passwordHash]
+    `INSERT INTO users (username, email, phone, password)
+     VALUES (?, ?, ?, ?)`,
+    [username, email, phone, passwordHash]
   );
 
   return result.insertId;

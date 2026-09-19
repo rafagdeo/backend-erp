@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { describe, it } = require('node:test');
 
 const projectsService = require('../app/src/services/projects');
-const ProjectController = require('../app/src/controllers/ProjectController');
+const clientController = require('../app/src/controllers/clientController');
 
 describe('Projeto backend', () => {
   it('deve exportar os métodos do service corretamente', () => {
@@ -11,7 +11,7 @@ describe('Projeto backend', () => {
   });
 
   it('deve exportar os métodos do controller corretamente', () => {
-    assert.equal(typeof ProjectController.createProject, 'function');
-    assert.equal(typeof ProjectController.listProjects, 'function');
+    assert.equal(typeof clientController.createProject, 'function');
+    assert.equal(typeof clientController.listProjects, 'function');
   });
 });

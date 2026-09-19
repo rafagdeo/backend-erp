@@ -18,9 +18,7 @@ async function login(email, password) {
 
 async function register(data) {
   if (
-    !data.firstName ||
-    !data.lastName ||
-    !data.birthDate ||
+    !data.username ||
     !data.email ||
     !data.phone ||
     !data.password

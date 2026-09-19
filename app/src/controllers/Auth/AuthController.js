@@ -32,19 +32,23 @@ async function register(req, res) {
     }
 }
 
-async function getUserByEmail(req, res){
+async function getMe(req, res) {
     try {
-        const userData = req.params.email || {};
-        const getEmail = await userServices.getUser(userData)
+
+        const usuarioId = req.usuario.id;
+
+        const user = await userServices.getUserById(usuarioId);
 
         return res.status(200).json({
-            message: "E-mail encontrado",
-            user: getEmail
-        })
-    }catch(err){
+            user
+        });
+
+    } catch (err) {
+
         return res.status(500).json({
-            message: `${err}. Erro ao buscar o email`
-        })
+            message: err.message
+        });
+
     }
 }
 
@@ -52,5 +56,5 @@ async function getUserByEmail(req, res){
 module.exports = {
     login,
     register,
-    getUserByEmail
+    getMe
 }
