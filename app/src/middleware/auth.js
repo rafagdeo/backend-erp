@@ -12,7 +12,7 @@ function autenticar(req, res, next) {
 
     if (!token) {
         return res.status(401).json({
-            erro: 'Token não enviado'
+            erro: 'Usuário não autenticado'
         });
     }
 
@@ -25,7 +25,7 @@ function autenticar(req, res, next) {
                 console.log('ERRO JWT:', err);
 
                 return res.status(403).json({
-                    erro: 'Token inválido'
+                    erro: 'Usuário não autenticado'
                 });
             }
 

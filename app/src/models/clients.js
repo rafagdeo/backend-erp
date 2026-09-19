@@ -47,9 +47,42 @@ async function deleteClient(id, userId) {
     return result.affectedRows > 0;
 }
 
+async function editClient(data, clientId, userId) {
+
+    const fields = [];
+    const values = [];
+
+    if (data.nome !== undefined) {
+        fields.push("nome = ?");
+        values.push(data.nome);
+    }
+
+    if (data.phone !== undefined) {
+        fields.push("telefone = ?");
+        values.push(data.phone);
+    }
+
+    if (fields.length === 0) {
+        return false;
+    }
+
+    values.push(clientId);
+    values.push(userId);
+
+    const [result] = await db.execute(
+        `UPDATE clientes
+         SET ${fields.join(", ")}
+         WHERE id = ? AND user_id = ?`,
+        values
+    );
+
+    return result.affectedRows > 0;
+}
+
 module.exports = {
     getClient,
     createClient,
     listClients,
-    deleteClient
+    deleteClient,
+    editClient
 };
