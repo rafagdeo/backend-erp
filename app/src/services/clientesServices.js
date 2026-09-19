@@ -84,6 +84,7 @@ async function editClient(data, clientId, userId) {
 
   return result;
 }
+
 module.exports = {
   getClient,
   createClient,
