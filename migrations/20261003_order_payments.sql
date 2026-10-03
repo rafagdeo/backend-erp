@@ -1,0 +1,2 @@
+ALTER TABLE pedidos
+  ADD COLUMN valor_pago DECIMAL(12, 2) NOT NULL DEFAULT 0;

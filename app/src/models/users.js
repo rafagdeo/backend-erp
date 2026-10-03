@@ -47,11 +47,32 @@ async function validUserLogin(email, userPassword) {
 async function getUserData(id) {
   const [result] = await db.execute(
     `
-      SELECT id, username, email, phone FROM users WHERE id = ?`,
+      SELECT id, username, email, phone, whatsapp_message FROM users WHERE id = ?`,
     [id],
   );
 
   return result[0];
+}
+
+async function updateUserProfile(id, data) {
+  const [result] = await db.execute(
+    `UPDATE users SET username = ?, phone = ?, whatsapp_message = ? WHERE id = ?`,
+    [data.username, data.phone, data.whatsapp_message, id],
+  );
+
+  if (result.affectedRows === 0) {
+    const user = await getUserData(id);
+    if (!user) return false;
+    if (
+      user.username !== data.username ||
+      user.phone !== data.phone ||
+      user.whatsapp_message !== data.whatsapp_message
+    ) {
+      throw new Error("Não foi possível salvar as alterações do perfil");
+    }
+  }
+
+  return true;
 }
 
 module.exports = {
@@ -59,4 +80,5 @@ module.exports = {
   searchUserByEmail,
   validUserLogin,
   getUserData,
+  updateUserProfile,
 };

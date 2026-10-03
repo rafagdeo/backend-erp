@@ -82,9 +82,22 @@ async function orderByClient(req, res) {
   }
 }
 
+async function orderDetails(req, res) {
+  try {
+    const order = await orderServices.orderDetails(req.params.id, req.usuario.id);
+    if (!order) {
+      return res.status(404).json({ message: "Pedido não encontrado" });
+    }
+    return res.status(200).json({ order, itens: order.itens });
+  } catch (err) {
+    return res.status(400).json({ message: err.message });
+  }
+}
+
 module.exports = {
   createOrder,
   editOrder,
   viewOrders,
   orderByClient,
+  orderDetails,
 };

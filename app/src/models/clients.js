@@ -6,6 +6,15 @@ async function getClient(phone, userId){
     return rows[0];
 }
 
+async function getClientById(clientId, userId, connection = db) {
+    const [rows] = await connection.execute(
+        `SELECT * FROM clientes WHERE id = ? AND user_id = ?`,
+        [clientId, userId]
+    );
+
+    return rows[0];
+}
+
 async function createClient(data) {
     const { nome, telefone, userId } = data;
 
@@ -81,6 +90,7 @@ async function editClient(data, clientId, userId) {
 
 module.exports = {
     getClient,
+    getClientById,
     createClient,
     listClients,
     deleteClient,

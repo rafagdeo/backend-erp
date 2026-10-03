@@ -20,12 +20,43 @@ async function viewOrderItem(userId, pedidoId, produtoId) {
          INNER JOIN pedidos p ON p.id = pi.pedido_id
          WHERE p.user_id = ?
          AND pi.pedido_id = ?
-         AND pi.produto_id = ?
-         AND pi.deleted_at IS NULL`,
+         AND pi.produto_id = ?`,
     [userId, pedidoId, produtoId],
   );
 
   return rows;
+}
+
+async function getItemsForOrder(connection, pedidoId) {
+  const [rows] = await connection.execute(
+    `SELECT pi.*, pr.nome AS produto_nome,
+     (pi.quantidade * pi.preco_unitario - COALESCE(pi.desconto, 0)) AS subtotal
+     FROM pedido_itens pi
+     INNER JOIN produtos pr ON pr.id = pi.produto_id
+     WHERE pi.pedido_id = ?
+     ORDER BY pi.id`,
+    [pedidoId],
+  );
+
+  return rows;
+}
+
+async function restoreStock(connection, itens, userId) {
+  for (const item of itens) {
+    const [result] = await connection.execute(
+      `UPDATE produtos SET quantidade_estoque = quantidade_estoque + ?
+       WHERE id = ? AND user_id = ?`,
+      [item.quantidade, item.produto_id, userId],
+    );
+
+    if (result.affectedRows === 0) {
+      throw new Error(`Produto ${item.produto_id} não encontrado para restaurar o estoque`);
+    }
+  }
+}
+
+async function deleteItemsForOrder(connection, pedidoId) {
+  await connection.execute(`DELETE FROM pedido_itens WHERE pedido_id = ?`, [pedidoId]);
 }
 
 async function updateStock(connection, itens, userId) {
@@ -48,5 +79,8 @@ async function updateStock(connection, itens, userId) {
 module.exports = {
   createItems,
   viewOrderItem,
+  getItemsForOrder,
+  restoreStock,
+  deleteItemsForOrder,
   updateStock,
 };

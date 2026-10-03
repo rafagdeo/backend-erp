@@ -41,6 +41,9 @@ async function register(data = {}) {
   if (normalizedData.username.length > 120 || normalizedData.phone.length > 24) {
     throw new Error("Nome ou telefone excede o tamanho permitido");
   }
+  if (!/^\d{10,11}$/.test(normalizedData.phone)) {
+    throw new Error("Telefone deve conter DDD e 10 ou 11 números");
+  }
   if (normalizedData.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedData.email)) {
     throw new Error("E-mail inválido");
   }
@@ -63,8 +66,46 @@ async function getUser(id) {
   return getUser;
 }
 
+async function updateProfile(id, data = {}) {
+  if (!id) throw new Error("Usuário não autenticado");
+
+  const username = typeof data.username === "string" ? data.username.trim() : "";
+  const phone = typeof data.phone === "string" ? data.phone.trim() : "";
+  const whatsappMessage =
+    typeof data.whatsapp_message === "string" ? data.whatsapp_message.trim() : "";
+
+  if (!username || !phone) {
+    throw new Error("Nome e telefone são obrigatórios");
+  }
+  if (username.length > 120 || phone.length > 24) {
+    throw new Error("Nome ou telefone excede o tamanho permitido");
+  }
+  if (!/^\d{10,11}$/.test(phone)) {
+    throw new Error("Telefone deve conter DDD e 10 ou 11 números");
+  }
+  if (whatsappMessage.length > 4000) {
+    throw new Error("A mensagem do WhatsApp não pode exceder 4000 caracteres");
+  }
+
+  const updated = await userModel.updateUserProfile(id, {
+    username,
+    phone,
+    whatsapp_message: whatsappMessage,
+  });
+
+  if (!updated) throw new Error("Usuário não encontrado");
+
+  const savedUser = await userModel.getUserData(id);
+  if (savedUser.whatsapp_message !== whatsappMessage) {
+    throw new Error("A mensagem de cobrança não foi salva");
+  }
+
+  return savedUser;
+}
+
 module.exports = {
   login,
   register,
   getUser,
+  updateProfile,
 };

@@ -34,6 +34,7 @@ router.post("/logout", AuthController.logout);
 // USER
 router.get("/me", autenticar, AuthController.getMe);
 router.get("/user/:id", autenticar, AuthController.getMe);
+router.patch("/profile", autenticar, AuthController.updateProfile);
 
 // CLIENT
 router.post("/create-client", autenticar, clientController.createClient);
@@ -50,6 +51,7 @@ router.get("/products", autenticar, productController.listProducts);
 //ORDERS
 router.post("/create-order", autenticar, orderController.createOrder);
 router.patch("/order/:id", autenticar, orderController.editOrder);
+router.get("/order/:id", autenticar, orderController.orderDetails);
 router.get("/orders", autenticar, orderController.viewOrders);
 router.get("/orders/client/:clienteId", autenticar, orderController.orderByClient);
 

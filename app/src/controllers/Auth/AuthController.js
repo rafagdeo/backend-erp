@@ -64,6 +64,15 @@ async function getMe(req, res) {
   }
 }
 
+async function updateProfile(req, res) {
+  try {
+    const user = await userServices.updateProfile(req.usuario.id, req.body);
+    return res.status(200).json({ message: "Perfil atualizado.", user });
+  } catch (err) {
+    return res.status(400).json({ message: err.message });
+  }
+}
+
 async function logout(req, res) {
   try {
     res.clearCookie("token", {
@@ -87,5 +96,6 @@ module.exports = {
   login,
   register,
   getMe,
+  updateProfile,
   logout,
 };
