@@ -47,7 +47,7 @@ async function validUserLogin(email, userPassword) {
 async function getUserData(id) {
   const [result] = await db.execute(
     `
-      SELECT * FROM users WHERE id = ?`,
+      SELECT id, username, email, phone FROM users WHERE id = ?`,
     [id],
   );
 

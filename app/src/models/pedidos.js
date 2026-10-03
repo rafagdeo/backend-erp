@@ -1,13 +1,13 @@
 const db = require("../database/connection");
 
-async function createOrder(userId, data, clientId) {
-    const { data_pedido, status, prazo_pagamento, valor_total, observacao } = data;
+async function createOrder(userId, data, clientId, connection = db) {
+    const { data_pedido, status, prazo_pagamento, observacao } = data;
 
-    const [result] = await db.execute(
+    const [result] = await connection.execute(
         `INSERT INTO pedidos
-        (data_pedido, status, prazo_pagamento, valor_total, observacao, user_id, cliente_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [data_pedido, status, prazo_pagamento, valor_total, observacao, userId, clientId]
+        (data_pedido, status, prazo_pagamento, observacao, user_id, cliente_id)
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [data_pedido, status, prazo_pagamento, observacao, userId, clientId]
     );
 
     return result.insertId;
@@ -51,7 +51,16 @@ async function editOrder(data, orderId, userId){
 
 async function getOrders(userId) {
     const [rows] = await db.execute(
-        `SELECT * FROM pedidos WHERE user_id = ?`,
+                `SELECT p.*, c.nome AS cliente_nome, c.telefone AS cliente_telefone,
+                 COALESCE((
+                     SELECT SUM(pi.quantidade * pi.preco_unitario - COALESCE(pi.desconto, 0))
+                     FROM pedido_itens pi
+                     WHERE pi.pedido_id = p.id
+                 ), 0) AS valor_total
+         FROM pedidos p
+         INNER JOIN clientes c ON c.id = p.cliente_id AND c.user_id = p.user_id
+         WHERE p.user_id = ?
+         ORDER BY p.data_pedido DESC`,
         [userId]
     );
 
@@ -60,8 +69,16 @@ async function getOrders(userId) {
 
 async function getOrdersByClient(userId, clienteId) {
     const [rows] = await db.execute(
-        `SELECT * FROM pedidos 
-         WHERE user_id = ? AND cliente_id = ?`,
+                `SELECT p.*, c.nome AS cliente_nome, c.telefone AS cliente_telefone,
+                 COALESCE((
+                     SELECT SUM(pi.quantidade * pi.preco_unitario - COALESCE(pi.desconto, 0))
+                     FROM pedido_itens pi
+                     WHERE pi.pedido_id = p.id
+                 ), 0) AS valor_total
+         FROM pedidos p
+         INNER JOIN clientes c ON c.id = p.cliente_id AND c.user_id = p.user_id
+         WHERE p.user_id = ? AND p.cliente_id = ?
+         ORDER BY p.data_pedido DESC`,
         [userId, clienteId]
     );
 

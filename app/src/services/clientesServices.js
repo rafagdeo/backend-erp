@@ -21,6 +21,9 @@ async function createClient(data, userId) {
   if (!nomeNormalizado || !telefoneNormalizado) {
     throw new Error("Nome e telefone são obrigatórios");
   }
+  if (!/^\d{10,11}$/.test(telefoneNormalizado)) {
+    throw new Error("Telefone deve conter DDD e 10 ou 11 dígitos");
+  }
 
   if (!userId) {
     throw new Error("Usuário não autenticado");
@@ -74,13 +77,18 @@ async function editClient(data, clientId, userId) {
     }
   }
 
-  if (data.phone !== undefined) {
-    if (typeof data.phone !== "string" || data.phone.trim() === "") {
+  const telefone = data.telefone ?? data.phone;
+  if (telefone !== undefined) {
+    if (typeof telefone !== "string" || !/^\d{10,11}$/.test(telefone.trim())) {
       throw new Error("Telefone inválido");
     }
   }
 
-  const result = await clientsModel.editClient(data, clientId, userId);
+  const dataNormalizado = { ...data };
+  if (telefone !== undefined) dataNormalizado.telefone = telefone;
+  delete dataNormalizado.phone;
+
+  const result = await clientsModel.editClient(dataNormalizado, clientId, userId);
 
   return result;
 }

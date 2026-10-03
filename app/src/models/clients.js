@@ -57,9 +57,9 @@ async function editClient(data, clientId, userId) {
         values.push(data.nome);
     }
 
-    if (data.phone !== undefined) {
+    if (data.telefone !== undefined) {
         fields.push("telefone = ?");
-        values.push(data.phone);
+        values.push(data.telefone);
     }
 
     if (fields.length === 0) {

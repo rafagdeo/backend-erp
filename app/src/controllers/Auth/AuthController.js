@@ -4,14 +4,23 @@ async function login(req, res) {
   try {
     const { email, password } = req.body || {};
     const validateLogin = await userServices.login(email, password);
+    const isProduction = process.env.NODE_ENV === "production";
+
+    res.cookie("token", validateLogin.token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "strict",
+      maxAge: 60 * 60 * 1000,
+      path: "/",
+    });
 
     return res.status(200).json({
-      message: "Sucessfully!",
-      user: validateLogin,
+      message: "Login realizado com sucesso.",
+      user: validateLogin.user,
     });
   } catch (err) {
-    res.status(500).json({
-      message: `${err}`,
+    return res.status(401).json({
+      message: "E-mail ou senha inválidos.",
     });
   }
 }
@@ -57,7 +66,12 @@ async function getMe(req, res) {
 
 async function logout(req, res) {
   try {
-    res.clearCookie("token");
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
 
     return res.status(200).json({
       message: "Logout realizado com sucesso",

@@ -1,5 +1,8 @@
 const pedidoModel = require("../models/pedidos");
 const clientModel = require("../models/clients");
+const pedidoItemsModel = require("../models/pedidosItens");
+const productsModel = require("../models/products");
+const db = require("../database/connection");
 
 const statusPermitidos = ["pendente", "processando", "concluido", "cancelado"];
 
@@ -85,7 +88,7 @@ async function createOrder(userId, data) {
     throw new Error("Dados do pedido não enviados");
   }
 
-  const { phone, data_pedido, status, prazo_pagamento } = data;
+  const { phone, data_pedido, status, prazo_pagamento, itens } = data;
 
   if (phone === undefined || phone === null) {
     throw new Error("Telefone do cliente é obrigatório");
@@ -113,19 +116,73 @@ async function createOrder(userId, data) {
 
   validaStatus(status);
 
+  if (!Array.isArray(itens) || itens.length === 0) {
+    throw new Error("Adicione ao menos um produto ao pedido");
+  }
+
+  const itensNormalizados = itens.map((item) => {
+    const produtoId = Number(item.produto_id);
+    const quantidade = Number(item.quantidade);
+    const desconto = Number(item.desconto || 0);
+
+    if (!Number.isInteger(produtoId) || produtoId <= 0 || !Number.isInteger(quantidade) || quantidade <= 0) {
+      throw new Error("Produto ou quantidade inválidos");
+    }
+    if (!Number.isFinite(desconto) || desconto < 0) {
+      throw new Error("Desconto inválido");
+    }
+
+    return { produto_id: produtoId, quantidade, desconto };
+  });
+
   const client = await clientModel.getClient(phone, userId);
 
   if (!client) {
     throw new Error("Cliente não encontrado");
   }
 
-  const dataParaSalvar = {
-    ...data,
-    data_pedido: dataPedidoConvertida,
-    prazo_pagamento: prazoPagamentoConvertido,
-  };
+  const connection = await db.getConnection();
 
-  return await pedidoModel.createOrder(userId, dataParaSalvar, client.id);
+  try {
+    await connection.beginTransaction();
+
+    const productIds = [...new Set(itensNormalizados.map((item) => item.produto_id))];
+    const products = await productsModel.getProductsForOrder(connection, productIds, userId);
+    const productsById = new Map(products.map((product) => [Number(product.id), product]));
+
+    const itemsWithPrice = itensNormalizados.map((item) => {
+      const product = productsById.get(item.produto_id);
+      if (!product) throw new Error("Um dos produtos não foi encontrado");
+      if (Number(product.quantidade_estoque) < item.quantidade) {
+        throw new Error(`Estoque insuficiente para ${item.produto_id}`);
+      }
+      const precoUnitario = Number(product.preco_venda);
+      if (item.desconto > precoUnitario * item.quantidade) {
+        throw new Error("O desconto excede o valor do item");
+      }
+
+      return { ...item, preco_unitario: precoUnitario };
+    });
+
+    const orderData = {
+      data_pedido: dataPedidoConvertida,
+      status,
+      prazo_pagamento: prazoPagamentoConvertido,
+      observacao: typeof data.observacao === "string" ? data.observacao.trim().slice(0, 1000) : "",
+    };
+    const orderId = await pedidoModel.createOrder(userId, orderData, client.id, connection);
+
+    await pedidoItemsModel.createItems(connection, orderId, itemsWithPrice);
+    await pedidoItemsModel.updateStock(connection, itemsWithPrice, userId);
+    await connection.commit();
+
+    return orderId;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 async function editOrder(data, pedidoId, userId) {

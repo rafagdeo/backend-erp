@@ -30,7 +30,7 @@ async function viewOrderItem(userId, pedidoId, produtoId) {
 
 async function updateStock(connection, itens, userId) {
   for (const item of itens) {
-    await connection.execute(
+    const [result] = await connection.execute(
       `UPDATE produtos
              SET quantidade_estoque = quantidade_estoque - ?
              WHERE id = ?
@@ -38,9 +38,10 @@ async function updateStock(connection, itens, userId) {
              AND quantidade_estoque >= ?`,
       [item.quantidade, item.produto_id, userId, item.quantidade],
     );
-  }
-  if (result.affectedRows === 0) {
-    throw new Error(`Estoque insuficiente para o produto ${item.produto_id}`);
+
+    if (result.affectedRows === 0) {
+      throw new Error(`Estoque insuficiente para o produto ${item.produto_id}`);
+    }
   }
 }
 

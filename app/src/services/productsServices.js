@@ -1,12 +1,14 @@
 const productsModel = require("../models/products");
 
-function validaNumber(value) {
+function validaNumber(value, integer = false) {
   if (
     typeof value !== "number" ||
-    value === null ||
-    value === undefined ||
+    !Number.isFinite(value) ||
     value < 0
   ) {
+    return `${value} inválida`;
+  }
+  if (integer && !Number.isInteger(value)) {
     return `${value} inválida`;
   }
 }
@@ -14,14 +16,14 @@ function validaNumber(value) {
 async function createProduct(data, userId) {
   const { nome, quantidade_estoque, preco_venda, custo_produto } = data || {};
 
-  if (nome === undefined || nome === null || nome === "") {
+  if (typeof nome !== "string" || !nome.trim() || nome.trim().length > 120) {
     return {
       success: false,
       message: "Nome inválido",
     };
   }
 
-  const estoqueError = validaNumber(quantidade_estoque);
+  const estoqueError = validaNumber(quantidade_estoque, true);
 
   if (estoqueError) {
     return {
@@ -48,20 +50,20 @@ async function createProduct(data, userId) {
     };
   }
 
-  return await productsModel.createProduct(data, userId);
+  return await productsModel.createProduct({ ...data, nome: nome.trim() }, userId);
 }
 
 async function editProduct(data, productId, userId) {
   const { nome, quantidade_estoque, preco_venda, custo_produto } = data || {};
 
   if (nome !== undefined) {
-    if (nome === null || nome === "") {
+    if (typeof nome !== "string" || !nome.trim() || nome.trim().length > 120) {
       return "Nome inválido";
     }
   }
 
   if (quantidade_estoque !== undefined) {
-    const estoqueError = validaNumber(quantidade_estoque);
+    const estoqueError = validaNumber(quantidade_estoque, true);
 
     if (estoqueError) {
       return estoqueError;

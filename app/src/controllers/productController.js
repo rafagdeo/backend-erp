@@ -82,15 +82,7 @@ async function listProducts(req, res) {
 
     const resultado = await productsServices.listProducts(usuarioId);
 
-    if (resultado.length === 0) {
-      return res.status(404).json({
-        message: "Nenhum produto encontrado.",
-      });
-    }
-
-    return res.status(200).json({
-      resultado,
-    });
+    return res.status(200).json({ products: resultado });
   } catch (err) {
     return res.status(500).json({
       message: err.message,

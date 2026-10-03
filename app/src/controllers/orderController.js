@@ -1,5 +1,4 @@
 const orderServices = require("../services/pedidoServices");
-const clientsModel = require("../models/clients");
 
 async function createOrder(req, res) {
   try {
@@ -53,14 +52,8 @@ async function viewOrders(req, res) {
 
     const resultadoBusca = await orderServices.viewOrders(userId);
 
-    if (resultadoBusca.length === 0) {
-      return res.status(404).json({
-        message: "Nenhum pedido encontrado.",
-      });
-    }
-
     return res.status(200).json({
-      message: resultadoBusca,
+      orders: resultadoBusca,
     });
   } catch (err) {
     return res.status(400).json({
@@ -79,14 +72,8 @@ async function orderByClient(req, res) {
       userId,
     );
 
-    if (resultadoBusca.length === 0) {
-      return res.status(404).json({
-        message: "Nenhum pedido encontrado.",
-      });
-    }
-
     return res.status(200).json({
-      message: resultadoBusca,
+      orders: resultadoBusca,
     });
   } catch (err) {
     return res.status(400).json({

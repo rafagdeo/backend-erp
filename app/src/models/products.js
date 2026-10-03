@@ -112,9 +112,23 @@ async function listProducts(userId){
     return result;
 }
 
+async function getProductsForOrder(connection, productIds, userId) {
+    const placeholders = productIds.map(() => '?').join(', ');
+    const [rows] = await connection.execute(
+        `SELECT id, preco_venda, quantidade_estoque
+         FROM produtos
+         WHERE user_id = ? AND id IN (${placeholders})
+         FOR UPDATE`,
+        [userId, ...productIds]
+    );
+
+    return rows;
+}
+
 module.exports = {
     createProduct,  
     editProduct,
     deleteProduct,
-    listProducts
+    listProducts,
+    getProductsForOrder
 }
