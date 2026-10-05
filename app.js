@@ -6,6 +6,8 @@ require('dotenv').config({ path: __dirname + '/.env' });
 const app = express();
 const port = process.env.PORT || 3001;
 
+app.set('trust proxy', 1);
+
 const siteRouter = require('./app/src/routes/routes');
 
 const allowedOrigins = [
@@ -24,24 +26,45 @@ app.disable('x-powered-by');
 
 app.use(helmet());
 
+// CORS
 app.use(cors({
   origin(origin, callback) {
     console.log('Origin recebida:', origin);
 
+    // Requisições sem Origin podem ser internas,
+    // health checks, Postman, servidor etc.
     if (!origin || allowedOrigins.includes(origin)) {
       console.log('Origin permitida:', origin);
       return callback(null, true);
     }
 
     console.log('Origin BLOQUEADA:', origin);
-    return callback(new Error(`Origem não permitida: ${origin}`));
+
+    return callback(
+      new Error(`Origem não permitida: ${origin}`)
+    );
   },
+
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+
+  methods: [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS'
+  ],
+
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization'
+  ]
 }));
 
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({
+  limit: '100kb'
+}));
 
 app.use(siteRouter);
 
