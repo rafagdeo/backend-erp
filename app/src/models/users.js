@@ -1,5 +1,6 @@
 const db = require("../database/connection");
 const bcrypt = require("bcrypt");
+const crypto = require("node:crypto");
 
 async function searchUserByEmail(email) {
   const [rows] = await db.execute(`SELECT * FROM users WHERE email = ?`, [
@@ -41,11 +42,25 @@ async function validUserLogin(email, userPassword) {
     throw error;
   }
 
-  const validPassword = await bcrypt.compare(userPassword, user.password);
+  const isBcrypt = typeof user.password === "string" && /^\$2[aby]\$\d{2}\$/.test(user.password);
+  let validPassword = isBcrypt
+    ? await bcrypt.compare(userPassword, user.password)
+    : typeof user.password === "string" && /^[a-f0-9]{32}$/i.test(user.password)
+      && crypto.timingSafeEqual(
+        Buffer.from(crypto.createHash("md5").update(userPassword).digest("hex"), "utf8"),
+        Buffer.from(user.password.toLowerCase(), "utf8"),
+      );
   if (!validPassword) {
     const error = new Error("Credenciais inválidas");
     error.status = 401;
     throw error;
+  }
+
+  // Compatibilidade de migração: contas MD5 são convertidas para bcrypt
+  // depois do primeiro login correto. Novos cadastros já usam bcrypt.
+  if (!isBcrypt) {
+    const passwordHash = await bcrypt.hash(userPassword, 10);
+    await db.execute("UPDATE users SET password = ? WHERE id = ?", [passwordHash, user.id]);
   }
 
   delete user.password;
