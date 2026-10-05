@@ -16,17 +16,25 @@ const allowedOrigins = [
     .filter(Boolean)
 ];
 
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('Allowed Origins:', allowedOrigins);
+
 app.disable('x-powered-by');
 
 app.use(helmet());
 
 app.use(cors({
   origin(origin, callback) {
+    console.log('Origin recebida:', origin);
+
     if (!origin || allowedOrigins.includes(origin)) {
+      console.log('Origin permitida:', origin);
       return callback(null, true);
     }
 
-    return callback(new Error('Origem não permitida'));
+    console.log('Origin BLOQUEADA:', origin);
+    return callback(new Error(`Origem não permitida: ${origin}`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
