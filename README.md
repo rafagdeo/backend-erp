@@ -32,7 +32,7 @@ Configure esses valores no `.env` do backend e mantenha o arquivo fora do contro
 
 ## Segurança da sessão
 
-- JWT em cookie `HttpOnly`, `SameSite=Strict` e `Secure` em produção.
+- JWT em cookie `HttpOnly`, `SameSite=None` e `Secure` em produção (HTTPS obrigatório); em desenvolvimento, `SameSite=Lax`.
 - CORS restrito a `FRONTEND_URL`; payload JSON limitado a 100 KB.
 - Limites de tentativas em login e cadastro.
 - Rotas de dados autenticadas e consultas limitadas ao usuário da sessão.

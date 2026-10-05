@@ -2,8 +2,12 @@ const userModel = require("../models/users");
 const jwt = require("jsonwebtoken");
 
 async function login(email, password) {
-  if (!email) throw new Error("email errado");
-  if (!password) throw new Error("password errado");
+  email = typeof email === "string" ? email.trim().toLowerCase() : "";
+  if (!email || typeof password !== "string" || !password) {
+    const error = new Error("Credenciais inválidas");
+    error.status = 401;
+    throw error;
+  }
 
   const user = await userModel.validUserLogin(email, password);
 

@@ -1,17 +1,23 @@
 const userServices = require("../../services/authenticator");
 
+function sessionCookieOptions() {
+  const production = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: production,
+    sameSite: production ? "none" : "lax",
+    path: "/",
+  };
+}
+
 async function login(req, res) {
   try {
     const { email, password } = req.body || {};
     const validateLogin = await userServices.login(email, password);
-    const isProduction = process.env.NODE_ENV === "production";
 
     res.cookie("token", validateLogin.token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "strict",
+      ...sessionCookieOptions(),
       maxAge: 60 * 60 * 1000,
-      path: "/",
     });
 
     return res.status(200).json({
@@ -19,8 +25,10 @@ async function login(req, res) {
       user: validateLogin.user,
     });
   } catch (err) {
-    return res.status(401).json({
-      message: "E-mail ou senha inválidos.",
+    const invalidCredentials = err.status === 401;
+    if (!invalidCredentials) console.error("Falha interna no login:", err.code || err.message);
+    return res.status(invalidCredentials ? 401 : 500).json({
+      message: invalidCredentials ? "E-mail ou senha inválidos." : "Serviço de autenticação indisponível. Tente novamente mais tarde.",
     });
   }
 }
@@ -76,10 +84,7 @@ async function updateProfile(req, res) {
 async function logout(req, res) {
   try {
     res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
+      ...sessionCookieOptions(),
     });
 
     return res.status(200).json({

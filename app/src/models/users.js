@@ -35,10 +35,18 @@ async function createUser(data) {
 
 async function validUserLogin(email, userPassword) {
   const user = await searchUserByEmail(email);
-  if (!user) throw new Error("Usuário não encontrado.");
+  if (!user) {
+    const error = new Error("Credenciais inválidas");
+    error.status = 401;
+    throw error;
+  }
 
   const validPassword = await bcrypt.compare(userPassword, user.password);
-  if (!validPassword) throw new Error("Senha inválida.");
+  if (!validPassword) {
+    const error = new Error("Credenciais inválidas");
+    error.status = 401;
+    throw error;
+  }
 
   delete user.password;
   return user;
