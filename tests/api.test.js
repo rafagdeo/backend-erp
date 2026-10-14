@@ -7,6 +7,7 @@ const ordersService = require('../app/src/services/pedidoServices');
 const authenticator = require('../app/src/services/authenticator');
 const ordersModel = require('../app/src/models/pedidos');
 const usersModel = require('../app/src/models/users');
+const passwordResetService = require('../app/src/services/passwordResetService');
 
 describe('Serviços do ERP', () => {
   it('expõe operações dos módulos usados pela API', () => {
@@ -31,6 +32,34 @@ describe('Serviços do ERP', () => {
 
   it('recusa telefone de cliente com caracteres não numéricos', async () => {
     await assert.rejects(clientsService.createClient({ nome: 'Cliente', telefone: '(11) 99999-9999' }, 1), /Telefone deve conter DDD/);
+  });
+
+  it('normaliza e valida data de nascimento opcional do cliente', () => {
+    assert.equal(clientsService.normalizeBirthDate('03/10/2000'), '2000-10-03');
+    assert.equal(clientsService.normalizeBirthDate('2000-10-03'), '2000-10-03');
+    assert.equal(clientsService.normalizeBirthDate(''), null);
+    assert.throws(() => clientsService.normalizeBirthDate('01/15/2026'), /inválida/);
+    assert.throws(() => clientsService.normalizeBirthDate('31/02/2000'), /inválida/);
+    assert.throws(() => clientsService.normalizeBirthDate('01/01/2999'), /inválida/);
+  });
+
+  it('valida os dados de senha nova antes de consumir um token', async () => {
+    await assert.rejects(passwordResetService.resetPassword('inválido', 'senhaForte123', 'senhaForte123'), /inválido ou expirado/);
+    await assert.rejects(passwordResetService.resetPassword('a'.repeat(64), 'curta', 'curta'), /10 caracteres/);
+    await assert.rejects(passwordResetService.resetPassword('a'.repeat(64), 'senhaForte123', 'senhaForte321'), /não coincidem/);
+  });
+
+  it('usa hash do token de redefinição ao atualizar a senha', async () => {
+    const originalReset = usersModel.resetPassword;
+    let receivedHash;
+    usersModel.resetPassword = async (hash) => { receivedHash = hash; return true; };
+    try {
+      await passwordResetService.resetPassword('a'.repeat(64), 'senhaForte123', 'senhaForte123');
+      assert.notEqual(receivedHash, 'a'.repeat(64));
+      assert.equal(receivedHash.length, 64);
+    } finally {
+      usersModel.resetPassword = originalReset;
+    }
   });
 
   it('recusa pedido sem usuário autenticado', async () => {

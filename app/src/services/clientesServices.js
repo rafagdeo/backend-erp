@@ -1,5 +1,23 @@
 const clientsModel = require("../models/clients");
 
+function normalizeBirthDate(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const raw = String(value).trim();
+  let year; let month; let day;
+  let match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) [, year, month, day] = match;
+  else {
+    match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) throw new Error("Data de nascimento deve estar no formato dd/MM/yyyy");
+    [, day, month, year] = match;
+  }
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+  if (parsed.getFullYear() !== Number(year) || parsed.getMonth() !== Number(month) - 1 || parsed.getDate() !== Number(day) || parsed > new Date()) {
+    throw new Error("Data de nascimento inválida");
+  }
+  return `${year}-${month}-${day}`;
+}
+
 async function getClient(phone) {
   if (phone === undefined || phone === null || phone === "") {
     throw new Error("Erro ao buscar cliente");
@@ -32,6 +50,7 @@ async function createClient(data, userId) {
   return clientsModel.createClient({
     nome: nomeNormalizado,
     telefone: telefoneNormalizado,
+    data_nascimento: normalizeBirthDate(data?.data_nascimento),
     userId,
   });
 }
@@ -85,6 +104,7 @@ async function editClient(data, clientId, userId) {
   }
 
   const dataNormalizado = { ...data };
+  if (data.data_nascimento !== undefined) dataNormalizado.data_nascimento = normalizeBirthDate(data.data_nascimento);
   if (telefone !== undefined) dataNormalizado.telefone = telefone;
   delete dataNormalizado.phone;
 
@@ -99,4 +119,5 @@ module.exports = {
   listClients,
   deleteClient,
   editClient,
+  normalizeBirthDate,
 };

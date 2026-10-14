@@ -46,3 +46,15 @@ Configure esses valores no `.env` do backend e mantenha o arquivo fora do contro
 npm test
 npm audit
 ```
+
+## SMTP e recuperação de senha
+
+Execute as migrações `20261013_client_birth_date.sql` e `20261013_password_reset_tokens.sql` na base existente. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` e `SMTP_FROM` no `.env`. Se o remetente estiver vazio, será usado `SMTP_USER`. A porta 465 usa TLS desde o início da conexão; a porta 587 exige STARTTLS.
+
+Defina `PASSWORD_RESET_URL` como a URL completa de `/reset-password` no front publicado. O endereço `localhost` serve apenas para desenvolvimento.
+
+Execute `npm run smtp:verify` para conferir conexão e autenticação sem enviar mensagens. O diagnóstico informa o código SMTP e a etapa da falha, sem exibir credenciais. A verificação de conexão não confirma aceitação ou entrega de uma mensagem pelo provedor.
+
+Se o envio falhar, o terminal do backend registra também a resposta do provedor, com e-mails e tokens ocultos. A validade dos links é calculada pelo MySQL (`NOW() + 1 hora`), usando o mesmo relógio da verificação de expiração, mesmo quando o Node está em outro fuso horário. Não é necessário alterar a tabela existente para essa correção; solicite um novo link para substituir os antigos.
+
+Depois de alterar o `.env`, reinicie o backend. Após iniciar a versão atual de `npm run dev`, alterações futuras nesse arquivo reiniciam o servidor automaticamente.

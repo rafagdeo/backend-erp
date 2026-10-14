@@ -98,10 +98,63 @@ async function updateUserProfile(id, data) {
   return true;
 }
 
+async function createPasswordResetToken(email, tokenHash) {
+  const user = await searchUserByEmail(email);
+  if (!user) return null;
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute(
+      "UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL",
+      [user.id],
+    );
+    await connection.execute(
+      "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
+      [user.id, tokenHash],
+    );
+    await connection.commit();
+    return { id: user.id, email: user.email, username: user.username };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function resetPassword(tokenHash, password) {
+  const passwordHash = await bcrypt.hash(password, 10);
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.execute(
+      "SELECT id, user_id FROM password_reset_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW() LIMIT 1 FOR UPDATE",
+      [tokenHash],
+    );
+    const reset = rows[0];
+    if (!reset) {
+      await connection.rollback();
+      return false;
+    }
+    await connection.execute("UPDATE users SET password = ? WHERE id = ?", [passwordHash, reset.user_id]);
+    await connection.execute("UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?", [reset.id]);
+    await connection.execute("UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL", [reset.user_id]);
+    await connection.commit();
+    return true;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   createUser,
   searchUserByEmail,
   validUserLogin,
   getUserData,
   updateUserProfile,
+  createPasswordResetToken,
+  resetPassword,
 };

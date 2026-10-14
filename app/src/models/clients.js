@@ -16,7 +16,7 @@ async function getClientById(clientId, userId, connection = db) {
 }
 
 async function createClient(data) {
-    const { nome, telefone, userId } = data;
+    const { nome, telefone, userId, data_nascimento } = data;
 
     const [existingClients] = await db.execute(
         `SELECT id
@@ -31,9 +31,9 @@ async function createClient(data) {
     }
 
     const [result] = await db.execute(
-        `INSERT INTO clientes (nome, telefone, user_id)
-         VALUES (?, ?, ?)`,
-        [nome, telefone, userId]
+        `INSERT INTO clientes (nome, telefone, data_nascimento, user_id)
+         VALUES (?, ?, ?, ?)`,
+        [nome, telefone, data_nascimento, userId]
     );
 
     return result.insertId;
@@ -69,6 +69,11 @@ async function editClient(data, clientId, userId) {
     if (data.telefone !== undefined) {
         fields.push("telefone = ?");
         values.push(data.telefone);
+    }
+
+    if (data.data_nascimento !== undefined) {
+        fields.push("data_nascimento = ?");
+        values.push(data.data_nascimento);
     }
 
     if (fields.length === 0) {

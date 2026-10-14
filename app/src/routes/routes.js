@@ -21,6 +21,13 @@ const registerLimiter = rateLimit({
     legacyHeaders: false,
     message: { message: "Muitas tentativas de cadastro. Tente novamente mais tarde." },
 });
+const passwordResetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: { message: "Muitas solicitações. Aguarde e tente novamente mais tarde." },
+});
 
 router.get('/', (req, res) => {
     res.send('Olá mundo')
@@ -30,6 +37,8 @@ router.get('/', (req, res) => {
 router.post("/login", loginLimiter, AuthController.login);
 router.post("/register", registerLimiter, AuthController.register);
 router.post("/logout", AuthController.logout);
+router.post("/password/forgot", passwordResetLimiter, AuthController.requestPasswordReset);
+router.post("/password/reset", passwordResetLimiter, AuthController.resetPassword);
 
 // USER
 router.get("/me", autenticar, AuthController.getMe);

@@ -7,7 +7,8 @@
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.24.2"
+    "mysql2": "^3.24.2",
+    "nodemailer": "^10.1.0"
   },
   "name": "backend",
   "version": "1.0.0",
@@ -15,7 +16,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "node --watch app.js",
+    "dev": "node --watch --watch-path=app --watch-path=app.js --watch-path=.env app.js",
+    "smtp:verify": "node scripts/verify-smtp.js",
     "test": "node --test"
   },
   "keywords": [],

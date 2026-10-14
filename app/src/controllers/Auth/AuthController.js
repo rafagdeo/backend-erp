@@ -1,4 +1,5 @@
 const userServices = require("../../services/authenticator");
+const passwordResetService = require("../../services/passwordResetService");
 
 function sessionCookieOptions() {
   const production = process.env.NODE_ENV === "production";
@@ -97,10 +98,30 @@ async function logout(req, res) {
   }
 }
 
+async function requestPasswordReset(req, res) {
+  try {
+    await passwordResetService.requestPasswordReset(req.body?.email);
+    return res.status(200).json({ message: "Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha." });
+  } catch (err) {
+    return res.status(err.status || 400).json({ message: err.message || "Não foi possível enviar o e-mail de redefinição." });
+  }
+}
+
+async function resetPassword(req, res) {
+  try {
+    await passwordResetService.resetPassword(req.body?.token, req.body?.password, req.body?.confirmPassword);
+    return res.status(200).json({ message: "Senha redefinida com sucesso." });
+  } catch (err) {
+    return res.status(400).json({ message: err.message });
+  }
+}
+
 module.exports = {
   login,
   register,
   getMe,
   updateProfile,
   logout,
+  requestPasswordReset,
+  resetPassword,
 };
